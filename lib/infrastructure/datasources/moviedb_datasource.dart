@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cinemapedia/infrastructure/models/moviedb/movie_details.dart';
 import 'package:dio/dio.dart';
 
@@ -19,66 +21,140 @@ class MoviedbDataSource extends MoviesDatasource {
   );
 
   List<Movie> _jsonToMovies(Map<String, dynamic> json) {
-    final movieDbResponse = MovieDbResponse.fromJson(json);
+    try {
+      final movieDbResponse = MovieDbResponse.fromJson(json);
 
-    final List<Movie> movies = movieDbResponse.results
-        .where((moviedb) => moviedb.posterPath != 'no-poster')
-        .map((moviedb) => MovieMapper.movieMovieDbToEntity(moviedb))
-        .toList();
+      final List<Movie> movies = movieDbResponse.results
+          .where((moviedb) => moviedb.posterPath != 'no-poster')
+          .map((moviedb) => MovieMapper.movieMovieDbToEntity(moviedb))
+          .toList();
 
-    return movies;
+      return movies;
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionError ||
+          e.error is SocketException) {
+        return [];
+      } else {
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
   }
 
   @override
   Future<List<Movie>> getNowPlaying({int page = 1}) async {
-    final response = await dio.get(
-      '/movie/now_playing',
-      queryParameters: {'page': page},
-    );
-
-    return _jsonToMovies(response.data);
+    try {
+      final response = await dio.get(
+        '/movie/now_playing',
+        queryParameters: {'page': page},
+      );
+      return _jsonToMovies(response.data);
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionError ||
+          e.error is SocketException) {
+        return [];
+      } else {
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
   }
 
   @override
   Future<List<Movie>> getPopular({int page = 1}) async {
-    final response = await dio.get(
-      '/movie/popular',
-      queryParameters: {'page': page},
-    );
+    try {
+      final response = await dio.get(
+        '/movie/popular',
+        queryParameters: {'page': page},
+      );
 
-    return _jsonToMovies(response.data);
+      return _jsonToMovies(response.data);
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionError ||
+          e.error is SocketException) {
+        return [];
+      } else {
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
   }
 
   @override
   Future<List<Movie>> getTopRated({int page = 1}) async {
-    final response = await dio.get(
-      '/movie/top_rated',
-      queryParameters: {'page': page},
-    );
-    return _jsonToMovies(response.data);
+    try {
+      final response = await dio.get(
+        '/movie/top_rated',
+        queryParameters: {'page': page},
+      );
+      return _jsonToMovies(response.data);
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionError ||
+          e.error is SocketException) {
+        return [];
+      } else {
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
   }
 
   @override
   Future<List<Movie>> getUpComing({int page = 1}) async {
-    final response = await dio.get(
-      '/movie/upcoming',
-      queryParameters: {'page': page},
-    );
-    return _jsonToMovies(response.data);
+    try {
+      final response = await dio.get(
+        '/movie/upcoming',
+        queryParameters: {'page': page},
+      );
+      return _jsonToMovies(response.data);
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionError ||
+          e.error is SocketException) {
+        return [];
+      } else {
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
   }
-  
-  @override
-  Future<Movie> getMovieById(String id) async{
-    
-    final response = await dio.get(
-      '/movie/$id',
-    );
 
-    if(response.statusCode !=200) throw Exception('Movie not found');
+  @override
+  Future<Movie> getMovieById(String id) async {
+    final response = await dio.get('/movie/$id');
+
+    if (response.statusCode != 200) throw Exception('Movie not found');
 
     final movieDetails = MovieDetails.fromJson(response.data);
 
     final movie = MovieMapper.movieDetailsToEntity(movieDetails);
     return movie;
+  }
+
+  @override
+  Future<List<Movie>> searchMovies(String query) async {
+    try {
+      if (query.isEmpty) return [];
+
+      final response = await dio.get(
+        '/search/movie',
+        queryParameters: {'query': query},
+      );
+
+      return _jsonToMovies(response.data);
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionError ||
+          e.error is SocketException) {
+        return [];
+      } else {
+        return [];
+      }
+    } catch (e) {
+      return [];
+    }
   }
 }
