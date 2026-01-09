@@ -4,14 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:cinemapedia/config/router/app_router.dart';
 import 'package:cinemapedia/config/theme/app_theme.dart';
+// import 'package:cinemapedia/config/database/database.dart';
 
-Future<void> main() async{
+Future<void> main() async {
   await dotenv.load();
-  runApp(
-    const ProviderScope(
-      child: MainApp(),
-    )
-  );
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // final query = db.delete(db.favoriteMovies);
+  // await query.go();
+  runApp(const ProviderScope(child: MainApp()));
 }
 
 class MainApp extends StatelessWidget {

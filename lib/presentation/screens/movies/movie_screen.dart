@@ -112,18 +112,36 @@ class _MovieDetails extends StatelessWidget {
   }
 }
 
-class _CustomSliverAppbar extends StatelessWidget {
+class _CustomSliverAppbar extends ConsumerWidget {
   final Movie movie;
   const _CustomSliverAppbar({required this.movie});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final size = MediaQuery.of(context).size;
+    final isFavoriteMovie = ref.watch(isFavoriteMovieProvider(movie.id));
 
     return SliverAppBar(
       backgroundColor: Colors.black,
       expandedHeight: size.height * 0.7,
       foregroundColor: Colors.white,
+      actions: [
+        IconButton(
+          onPressed: () async {
+            ref
+                .read(favotireMoviesProvider.notifier)
+                .toggleFavoriteMovie(movie);
+            ref.invalidate(isFavoriteMovieProvider(movie.id));
+          },
+          icon: isFavoriteMovie.when(
+            data: (isFavorite) => isFavorite
+                ? Icon(Icons.favorite_sharp, color: Colors.red)
+                : Icon(Icons.favorite_border_outlined),
+            error: (error, stack) => Icon(Icons.error),
+            loading: () => CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         // title: Text(
@@ -135,40 +153,37 @@ class _CustomSliverAppbar extends StatelessWidget {
           children: [
             SizedBox.expand(
               child: Image.network(
-                movie.posterPath, 
+                movie.posterPath,
                 fit: BoxFit.cover,
-                loadingBuilder: (context, child, loadingProgress){
-                  if(loadingProgress != null)return SizedBox();
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress != null) return SizedBox();
                   return FadeIn(child: child);
                 },
-                ),
+              ),
             ),
 
             // Gradiente afecta titulo
-            const SizedBox.expand(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    stops: [0.7, 1.0],
-                    colors: [Colors.transparent, Colors.black87],
-                  ),
-                ),
-              ),
+            _CustomGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              stops: [0.8, 1.0],
+              colors: [Colors.transparent, Colors.black38],
             ),
 
             // Gradiente afecta backbutton
-            const SizedBox.expand(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    stops: [0.0, 0.3],
-                    colors: [Colors.black87, Colors.transparent],
-                  ),
-                ),
-              ),
+            _CustomGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              stops: [0.0, 0.1],
+              colors: [Colors.black87, Colors.transparent],
+            ),
+
+            // Gradiente afecta favorito icono
+            _CustomGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              stops: [0.0, 0.3],
+              colors: [Colors.black87, Colors.transparent],
             ),
           ],
         ),
@@ -183,10 +198,9 @@ class _ActorsByMovie extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-
     final actorsByMovie = ref.watch(actorsByMovieProvider);
-    if(actorsByMovie[movieId] == null){
-      return const Center(child: CircularProgressIndicator(strokeWidth: 2,));
+    if (actorsByMovie[movieId] == null) {
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
     }
 
     final actors = actorsByMovie[movieId]!;
@@ -216,24 +230,48 @@ class _ActorsByMovie extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 5),
-                Text(
-                  actor.name,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis
-                ),
-                if(actor.character != null)
-                Text(
-                  actor.character?? '',
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
+                Text(actor.name, maxLines: 2, overflow: TextOverflow.ellipsis),
+                if (actor.character != null)
+                  Text(
+                    actor.character ?? '',
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontWeight: FontWeight.bold),
                   ),
-                ),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+class _CustomGradient extends StatelessWidget {
+  final AlignmentGeometry begin;
+  final AlignmentGeometry end;
+  final List<double> stops;
+  final List<Color> colors;
+
+  const _CustomGradient({
+    this.begin = Alignment.centerLeft,
+    this.end = Alignment.centerRight,
+    required this.stops,
+    required this.colors,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox.expand(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: begin,
+            end: end,
+            stops: stops,
+            colors: colors,
+          ),
+        ),
       ),
     );
   }
